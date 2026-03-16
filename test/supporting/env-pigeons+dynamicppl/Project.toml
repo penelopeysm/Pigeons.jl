@@ -2,8 +2,6 @@
 DynamicPPL = "366bfd00-2699-11ea-058f-f148b4cae6d8"
 Pigeons = "0eb8d820-af6a-4919-95ae-11206f830c31"
 
-
-[weakdeps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 DocStringExtensions = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"

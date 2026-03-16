@@ -3,6 +3,10 @@ $SIGNATURES
 
 Convenience constructor for [`Pigeons.TuringLogPotential`](@ref).
 """
+
+# set default arguments for DynamicPPL.InitContext
+DynamicPPL.InitContext() = DynamicPPL.InitContext(InitFromPrior(),UnlinkAll())
+
 Pigeons.TuringLogPotential(model::DynamicPPL.Model, only_prior::Bool) = 
     TuringLogPotential(
         model, 
@@ -37,7 +41,7 @@ Pigeons.@provides target Pigeons.TuringLogPotential(model::DynamicPPL.Model) =
     TuringLogPotential(model, false)
 
 is_fully_continuous(vi::DynamicPPL.VarInfo) =
-    all(values -> eltype(values.vals) <: AbstractFloat, vi.values)
+    all(values -> eltype(values.val) <: AbstractFloat, vi.values.data)
 
 # checks needed when using gradient-based explorers
 function Pigeons.initialization(
@@ -68,7 +72,10 @@ Pigeons.initialization(
 
 function Pigeons.initialization(target::TuringLogPotential, rng::AbstractRNG, _::Int64)
     vi = DynamicPPL.VarInfo(rng, target.model, DynamicPPL.InitFromPrior())
-    return DynamicPPL.link(vi, target.model)
+    vi = DynamicPPL.link(vi, target.model)
+    # make vi go through 1 unflatten!! to make sure no type conflicts occur in step! functions
+    vector_state = DynamicPPL.internal_values_as_vector(vi)
+    return DynamicPPL.unflatten!!(vi, vector_state)
 end
 
 # At the moment, AutoMALA assumes a :singleton_variable structure
@@ -99,9 +106,6 @@ function LogDensityProblemsAD.ADgradient(
 end
 
 
-## TODO:
-# change 
-
 # adapted from DPPL to use buffer 
 # https://github.com/TuringLang/DynamicPPL.jl/blob/fb5413f482b962d97b6e4728d560297cd713c295/src/logdensityfunction.jl#L202
 function LogDensityProblems.logdensity_and_gradient(
@@ -111,7 +115,7 @@ function LogDensityProblems.logdensity_and_gradient(
     ldf = b.enclosed
     buffer = b.buffer
 
-    ldf.prep === nothing &&
+    ldf._adprep === nothing &&
         error("Gradient preparation not available; this should not happen")
     params = convert(DynamicPPL._get_input_vector_type(ldf), params)  # Concretise type
     # Make branching statically inferrable, i.e. type-stable (even if the two

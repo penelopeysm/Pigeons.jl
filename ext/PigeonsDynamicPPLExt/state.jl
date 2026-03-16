@@ -99,7 +99,7 @@ explorer implementations
 function Pigeons.slice_sample!(h::SliceSampler, vi::DynamicPPL.VarInfo, log_potential, cached_lp, replica)
     vals = copy(DynamicPPL.getindex_internal(vi, :)) # flattened 
     cached_lp = Pigeons.slice_sample!(h, vals, log_potential, cached_lp, replica)
-    replica.state = DynamicPPL.unflatten!!(vi, vals)
+    # replica.state = DynamicPPL.unflatten!!(vi, vals)
     return cached_lp
 end
 

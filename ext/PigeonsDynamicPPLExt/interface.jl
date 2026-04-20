@@ -108,7 +108,7 @@ function LogDensityProblems.logdensity_and_gradient(
 
     ldf._adprep === nothing &&
         error("Gradient preparation not available; this should not happen")
-    params = convert(DynamicPPL._get_input_vector_type(ldf), params)  # Concretise type
+    params = convert(DynamicPPL.get_input_vector_type(ldf), params)  # Concretise type
     # Make branching statically inferrable, i.e. type-stable (even if the two
     # branches happen to return different types)
     return if DynamicPPL._use_closure(ldf.adtype)

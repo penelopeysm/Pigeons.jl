@@ -21,7 +21,7 @@ println("test unflatten:", DynamicPPL.unflatten!!(vi, vector_state), "\n")
     println("keys(vi) = ", keys(vi))
     for vn in keys(vi)
         println("vn = ", vn)
-        println("  sym = ", DynamicPPL.getsym(vn))
+        println("  sym = ", Symbol(vn))
         tv = getindex(vi.values, vn)
         val = DynamicPPL.get_internal_value(tv)
         println("  val = ", val)
@@ -36,10 +36,10 @@ println("test unflatten:", DynamicPPL.unflatten!!(vi, vector_state), "\n")
     vars_of_int = Pigeons.discrete_variables(vi)
     println("variables(vi, Int64) = ", vars_of_int)
     @test length(vars_of_int) == 2 # n, y
-    α_val = Pigeons.variable(vi, DynamicPPL.getsym(keys(vi)[1]))
-    β_val = Pigeons.variable(vi, DynamicPPL.getsym(keys(vi)[2]))
-    n_val = Pigeons.variable(vi, DynamicPPL.getsym(keys(vi)[3]))
-    y_val = Pigeons.variable(vi, DynamicPPL.getsym(keys(vi)[4]))
+    α_val = Pigeons.variable(vi, Symbol(keys(vi)[1]))
+    β_val = Pigeons.variable(vi, Symbol(keys(vi)[2]))
+    n_val = Pigeons.variable(vi, Symbol(keys(vi)[3]))
+    y_val = Pigeons.variable(vi, Symbol(keys(vi)[4]))
     println("values: ", α_val, β_val, n_val, y_val)
 
 
@@ -52,7 +52,7 @@ println("test unflatten:", DynamicPPL.unflatten!!(vi, vector_state), "\n")
 end
 
 @testset "update_state!" begin
-    syms = DynamicPPL.getsym.(keys(vi))
+    syms = Symbol.(keys(vi))
     updated_vi = Pigeons.update_state!(vi, syms[1], 1, 0.81)
     @test DynamicPPL.getindex_internal(updated_vi, :)[1] == 0.81
 end

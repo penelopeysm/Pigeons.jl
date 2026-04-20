@@ -15,7 +15,8 @@ DynamicPPL.setindex_internal!!(vi, val, vn) -> new vi with val replacing the old
 # grouping of variables
 function variables(vi::DynamicPPL.VarInfo, ::Type{T}) where {T}
     vns = keys(vi)
-    syms = DynamicPPL.getsym.(vns)
+    # syms = DynamicPPL.getsym.(vns)
+    syms = Symbol.(vns) # As Penny suggested
     # return [sym for (sym, vn) in zip(syms, vns) if eltype(DynamicPPL.get_internal_value(getindex(vi.values, vn))) <: T]
     return [sym for (sym, vn) in zip(syms, vns) if eltype(DynamicPPL.getindex_internal(vi, vn)) <: T]
 end
@@ -39,13 +40,15 @@ Pigeons.variable(state::DynamicPPL.VarInfo, name::Symbol) =
     if name === :singleton_variable
         DynamicPPL.getindex_internal(state, :)
     else
-        vns = [vn for vn in keys(state) if DynamicPPL.getsym(vn) === name]
+        # vns = [vn for vn in keys(state) if DynamicPPL.getsym(vn) === name]
+        vns = [vn for vn in keys(state) if Symbol(vn) === name] # As Penny suggested
         mapreduce(vn -> DynamicPPL.getindex_internal(state, vn), vcat, vns)
     end
 
 
 function Pigeons.update_state!(vi::DynamicPPL.VarInfo, name::Symbol, index::Int, value)
-    vns = [vn for vn in keys(vi) if DynamicPPL.getsym(vn) === name]
+    # vns = [vn for vn in keys(vi) if DynamicPPL.getsym(vn) === name]
+    vns = [vn for vn in keys(vi) if Symbol(vn) === name] # As Penny suggested
     vn = vns[1]
     vals = DynamicPPL.getindex_internal(vi, vn)
     vals[index] = value

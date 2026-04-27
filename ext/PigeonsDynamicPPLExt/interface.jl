@@ -7,8 +7,11 @@ Convenience constructor for [`Pigeons.TuringLogPotential`](@ref).
 function Pigeons.TuringLogPotential(model::DynamicPPL.Model, only_prior::Bool)
     getlogdensity = only_prior ? DynamicPPL.getlogprior_internal : DynamicPPL.getlogjoint_internal
 
-    # I assume you want to evaluate logp in linked space, using parameters in linked space.
-    ldf = LogDensityFunction(model, getlogdensity, LinkAll())
+    # =======  new workaround to avoid touching global rng ========
+    tmp_rng = Xoshiro(468)
+    accs = OnlyAccsVarInfo(VectorValueAccumulator())
+    _, accs = init!!(tmp_rng, model, accs, InitFromPrior(), LinkAll())
+    ldf = LogDensityFunction(model, getlogdensity, accs)
 
     return TuringLogPotential(model, ldf, LogDensityProblems.dimension(ldf))
 end

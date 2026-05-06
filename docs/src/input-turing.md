@@ -128,7 +128,8 @@ end
 const ToyBetaBinomType = typeof(toy_beta_binom_target())
 
 function Pigeons.initialization(target::ToyBetaBinomType, rng::AbstractRNG, ::Int64) 
-    result = DynamicPPL.VarInfo(rng, target.model, DynamicPPL.SampleFromPrior(), DynamicPPL.PriorContext())
+    # result = DynamicPPL.VarInfo(rng, target.model, DynamicPPL.SampleFromPrior(), DynamicPPL.PriorContext())
+    result = DynamicPPL.VarInfo(rng, target.model, DynamicPPL.InitFromPrior())
     result = DynamicPPL.link(result, target.model)
 
     # custom init goes here: for example here setting the variable p to 0.5

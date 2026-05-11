@@ -1,23 +1,8 @@
-"""
-Notes:
-vi.values -> VarNamedTuple: (key, value) = (VarName, AbstractTransformedValue)
-keys(vi) -> an iterator (collectable) of DynamicPPL.VarName objects, e.g. keys(vi) = VarName[α, β, y]
-collect(keys(vi)) -> Vector{DynamicPPL.VarName}
-VarName has: symbol + something else (could be AbstractPPL.Iden)
-so DynamicPPL.getsym(vn) -> symbol of this VarName
-
-DynamicPPL.getindex_internal(vi, vn) -> vector of values of each variable
-DynamicPPL.setindex_internal!!(vi, val, vn) -> new vi with val replacing the old one
-
-
-"""
-
 # grouping of variables
 function variables(vi::DynamicPPL.VarInfo, ::Type{T}) where {T}
     vns = keys(vi)
-    # syms = DynamicPPL.getsym.(vns)
-    syms = Symbol.(vns) # As Penny suggested
-    # return [sym for (sym, vn) in zip(syms, vns) if eltype(DynamicPPL.get_internal_value(getindex(vi.values, vn))) <: T]
+    # use Symbol instead of DynamicPPL.getsym.(vns) to avoid potential conflicts, see: https://github.com/Julia-Tempering/Pigeons.jl/pull/409#discussion_r2962749585
+    syms = Symbol.(vns)
     return [sym for (sym, vn) in zip(syms, vns) if eltype(DynamicPPL.getindex_internal(vi, vn)) <: T]
 end
 
@@ -40,15 +25,13 @@ Pigeons.variable(state::DynamicPPL.VarInfo, name::Symbol) =
     if name === :singleton_variable
         DynamicPPL.getindex_internal(state, :)
     else
-        # vns = [vn for vn in keys(state) if DynamicPPL.getsym(vn) === name]
-        vns = [vn for vn in keys(state) if Symbol(vn) === name] # As Penny suggested
+        vns = [vn for vn in keys(state) if Symbol(vn) === name]
         mapreduce(vn -> DynamicPPL.getindex_internal(state, vn), vcat, vns)
     end
 
 
 function Pigeons.update_state!(vi::DynamicPPL.VarInfo, name::Symbol, index::Int, value)
-    # vns = [vn for vn in keys(vi) if DynamicPPL.getsym(vn) === name]
-    vns = [vn for vn in keys(vi) if Symbol(vn) === name] # As Penny suggested
+    vns = [vn for vn in keys(vi) if Symbol(vn) === name]
     vn = vns[1]
     vals = DynamicPPL.getindex_internal(vi, vn)
     vals[index] = value
@@ -104,7 +87,7 @@ function Pigeons.step!(explorer::Pigeons.GradientBasedSampler, replica, shared, 
     vector_state = Pigeons.get_buffer(replica.recorders.buffers, :flattened_vi, get_dimension(vi))
     flatten!(vi, vector_state)
     Pigeons.step!(explorer, replica, shared, vector_state)
-    # replica.state = DynamicPPL.unflatten!!(vi, vector_state) <===== unflatten!! assign a reconstructed vi object to replica.state
+    # replica.state = DynamicPPL.unflatten!!(vi, vector_state) will assign a reconstructed vi object to replica.state
     i = firstindex(vector_state)
     for vn in keys(vi)
         block = DynamicPPL.getindex_internal(vi, vn)

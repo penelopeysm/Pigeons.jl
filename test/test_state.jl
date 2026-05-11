@@ -12,8 +12,6 @@ rng = SplittableRandom(2026)
 model = test_model()
 vi = DynamicPPL.VarInfo(model)
 
-vector_state = DynamicPPL.internal_values_as_vector(vi)
-println("test unflatten:", DynamicPPL.unflatten!!(vi, vector_state), "\n")
 
 @testset "variables" begin
     println("typeof(vi) = ", typeof(vi))
@@ -63,7 +61,7 @@ end
     lp = TuringLogPotential(model)
     extracted_sample_values = Pigeons.extract_sample(vi, lp)
     println("samples = ", extracted_sample_values)
-    #test sample_names
+    # test sample_names
     extracted_sample_names = Pigeons.sample_names(vi, nothing)
     println("sample_names = ", extracted_sample_names)
     @test length(extracted_sample_values) == length(extracted_sample_names)
@@ -121,10 +119,6 @@ end
         cached_lp = Pigeons.slice_sample!(h, vi, log_potential, cached_lp, replica)
         inv_vi = DynamicPPL.invlink(vi, model)
         state = DynamicPPL.getindex_internal(inv_vi, :)[1]
-        # println("cached_lp = ", cached_lp)
-        # state = DynamicPPL.getindex_internal(vi, :)[1]
-        # println("type of state:", typeof(state))
-        # println("state:", state)
         states[i] = state
     end
     @test abs(mean(states) - 0.7) < 0.1

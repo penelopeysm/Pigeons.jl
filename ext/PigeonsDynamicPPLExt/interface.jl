@@ -7,7 +7,7 @@ Convenience constructor for [`Pigeons.TuringLogPotential`](@ref).
 function Pigeons.TuringLogPotential(model::DynamicPPL.Model, only_prior::Bool)
     getlogdensity = only_prior ? DynamicPPL.getlogprior_internal : DynamicPPL.getlogjoint_internal
 
-    # =======  new workaround to avoid touching global rng ========
+    # workaround to avoid touching global rng
     tmp_rng = Xoshiro(468)
     accs = OnlyAccsVarInfo(VectorValueAccumulator())
     _, accs = init!!(tmp_rng, model, accs, InitFromPrior(), LinkAll())
@@ -67,9 +67,7 @@ Pigeons.initialization(
 function Pigeons.initialization(target::TuringLogPotential, rng::AbstractRNG, _::Int64)
     vi = DynamicPPL.VarInfo(rng, target.model, DynamicPPL.InitFromPrior())
     vi = DynamicPPL.link(vi, target.model)
-    # make vi go through 1 unflatten!! to make sure no type conflicts occur in step! functions
-    # vector_state = DynamicPPL.internal_values_as_vector(vi) # BUG: this will force all variables(dis/cts) into Float!
-    # return DynamicPPL.unflatten!!(vi, vector_state) 
+    # DynamicPPL.unflatten!! will force all variables(dis/cts) into Float!
     return vi
 end
 

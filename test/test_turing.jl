@@ -29,6 +29,8 @@ end
     model = model_with_vectors()
     vi = DynamicPPL.VarInfo(SplittableRandom(1234), model)
     dim = PigeonsDynamicPPLExt.get_dimension(vi)
+    model_dim = PigeonsDynamicPPLExt.get_dimension(model)
+    @test model_dim == 4
     @test dim == 4
     dest = zeros(dim)
     PigeonsDynamicPPLExt.flatten!(vi, dest)

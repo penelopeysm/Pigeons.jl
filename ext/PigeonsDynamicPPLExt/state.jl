@@ -53,28 +53,26 @@ end
 
 function Pigeons.sample_names(state::DynamicPPL.VarInfo, _)
     result = Symbol[]
-    syms = DynamicPPL.getsym.(keys(state))
-    for sym in syms
-        var = Pigeons.variable(state, sym)
+    all_names = DynamicPPL.getsym.(keys(state))
+    for var_name in all_names
+        var = Pigeons.variable(state, var_name)
         # TODO: test up tp this point, try different data types: scalar, vector, matrix, etc to see var.
         if var isa Number || (var isa AbstractArray && length(var) == 1) # TODO: is this long predicate necessary??
-            push!(result, sym)
+            push!(result, var_name)
         elseif var isa AbstractArray
             for i in eachindex(var) # bug here: missing the last index
-                var_and_index_name = Symbol(sym, "[", join(ind2sub(size(var), i), ","), "]")
+                var_and_index_name = Symbol(var_name, "[", join(ind2sub(size(var), i), ","), "]")
                 push!(result, var_and_index_name)
             end
         else
-            error("don't know how to handle var `$sym` of type $(typeof(var))")
+            error("don't know how to handle var `$var_name` of type $(typeof(var))")
         end
     end
     push!(result, :log_density)
     return result
 end
 
-#=
-explorer implementations
-=#
+# explorer implementations
 function Pigeons.slice_sample!(h::SliceSampler, vi::DynamicPPL.VarInfo, log_potential, cached_lp, replica)
     for vn in keys(vi)
         block = DynamicPPL.getindex_internal(vi, vn)
@@ -98,9 +96,7 @@ function Pigeons.step!(explorer::Pigeons.GradientBasedSampler, replica, shared, 
     replica.state = vi
 end
 
-#=
-specialized equality checks
-=#
+# specialized equality checks
 Pigeons._recursive_equal(a::DynamicPPL.VarInfo, b::DynamicPPL.VarInfo) =
     length(a) == length(b) &&
     sample_names(a, 1) == sample_names(b, 1) && # second argument of sample_names() is dummy

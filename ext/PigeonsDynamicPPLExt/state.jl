@@ -56,11 +56,10 @@ function Pigeons.sample_names(state::DynamicPPL.VarInfo, _)
     all_names = DynamicPPL.getsym.(keys(state))
     for var_name in all_names
         var = Pigeons.variable(state, var_name)
-        # TODO: test up tp this point, try different data types: scalar, vector, matrix, etc to see var.
-        if var isa Number || (var isa AbstractArray && length(var) == 1) # TODO: is this long predicate necessary??
+        if var isa Number || (var isa AbstractArray && eltype(var) <: Number && length(var) == 1)
             push!(result, var_name)
-        elseif var isa AbstractArray
-            for i in eachindex(var) # bug here: missing the last index
+        elseif var isa AbstractArray && eltype(var) <: Number
+            for i in eachindex(var)
                 var_and_index_name = Symbol(var_name, "[", join(ind2sub(size(var), i), ","), "]")
                 push!(result, var_and_index_name)
             end

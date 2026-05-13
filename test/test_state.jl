@@ -1,30 +1,41 @@
 import Pigeons
 using DynamicPPL
 
-@model function test_model()
+
+struct StringCategorical <: DiscreteUnivariateDistribution
+    outcomes::Vector{String}
+    probs::Vector{Float64}
+end
+
+Base.rand(rng::AbstractRNG, d::StringCategorical) =
+    d.outcomes[rand(rng, Categorical(d.probs))]
+
+Distributions.logpdf(d::StringCategorical, x::String) = begin
+    i = findfirst(==(x), d.outcomes)
+    isnothing(i) ? -Inf : log(d.probs[i])
+end
+
+Distributions.logpdf(d::StringCategorical, x) = -Inf
+Distributions.insupport(d::StringCategorical, x) = x in d.outcomes
+
+
+
+@model function mix_dis_cts_model()
     α ~ Beta(1, 2)
     β ~ Beta(2, 3)
     n ~ Poisson(3.0) + 1
     y ~ Binomial(n, α * β)
 end
 
-rng = SplittableRandom(2026)
-model = test_model()
+rng = SplittableRandom(1)
+model = mix_dis_cts_model()
 vi = DynamicPPL.VarInfo(model)
 
 
 @testset "variables" begin
-    println("typeof(vi) = ", typeof(vi))
-    println("vi = ", vi)
-    println("keys(vi) = ", keys(vi))
     for vn in keys(vi)
-        println("vn = ", vn)
-        println("  sym = ", Symbol(vn))
         tv = getindex(vi.values, vn)
         val = DynamicPPL.get_internal_value(tv)
-        println("  val = ", val)
-        println("  typeof(val) = ", typeof(val))
-        println("  eltype(val) = ", eltype(val))
     end
 
     # test Pigeons.variable()
@@ -34,11 +45,6 @@ vi = DynamicPPL.VarInfo(model)
     vars_of_int = Pigeons.discrete_variables(vi)
     println("variables(vi, Int64) = ", vars_of_int)
     @test length(vars_of_int) == 2 # n, y
-    α_val = Pigeons.variable(vi, Symbol(keys(vi)[1]))
-    β_val = Pigeons.variable(vi, Symbol(keys(vi)[2]))
-    n_val = Pigeons.variable(vi, Symbol(keys(vi)[3]))
-    y_val = Pigeons.variable(vi, Symbol(keys(vi)[4]))
-    println("values: ", α_val, β_val, n_val, y_val)
 
 
     syms = DynamicPPL.getsym.(keys(vi))
@@ -60,26 +66,51 @@ end
     # test extract_sample
     lp = TuringLogPotential(model)
     extracted_sample_values = Pigeons.extract_sample(vi, lp)
-    println("samples = ", extracted_sample_values)
     # test sample_names
     extracted_sample_names = Pigeons.sample_names(vi, nothing)
-    println("sample_names = ", extracted_sample_names)
     @test length(extracted_sample_values) == length(extracted_sample_names)
 
+    #test non-numeric input
+    @model function non_numeric()
+        x ~ StringCategorical(["hello", "world"], [0.5, 0.5])
+    end
+    vi_ = DynamicPPL.VarInfo(non_numeric())
+    @test Pigeons.variable(vi, :singleton_variable) ==
+          DynamicPPL.getindex_internal(vi, :)
+    try
+        Pigeons.sample_names(vi_, nothing)
+    catch e
+        e
+    end
 end
 
 
 @testset "equality" begin
-    @model function model_2()
-        α ~ Beta(1, 2)
-        β ~ Beta(2, 3)
-        y ~ Binomial(10, α * β)
+    rng = SplittableRandom(1)
+    @model function model_1(y)
+        p ~ Beta(1, 2)
+        y .~ Binomial(10, p)
         return nothing
     end
-    vi_2 = DynamicPPL.VarInfo(model_2())
+    @model function model_2(y)
+        α ~ Beta(1, 2)
+        β ~ Beta(2, 3)
+        y .~ Binomial(10, α * β)
+        return nothing
+    end
+    dist = Binomial(10, 0.2)
+    y = rand(rng, dist, 1000)
+    vi_1 = DynamicPPL.VarInfo(rng, model_1(y))
+    vi_2 = DynamicPPL.VarInfo(rng, model_2(y))
+    vi_1_copy = vi_1
 
-    @test Pigeons._recursive_equal(vi, vi_2) == false
-    @test Pigeons.recursive_equal(vi, vi_2) == false
+    @test Pigeons.recursive_equal(vi_1, vi_2) == false
+    @test Pigeons.recursive_equal(vi_1, vi_1_copy) == true
+    @test Pigeons.recursive_equal(model_1(y), model_2(y)) == false
+    @test Pigeons.recursive_equal(model_1(y), model_1(y)) == true
+    @test Pigeons.recursive_equal(TuringLogPotential(model_1(y)),TuringLogPotential(model_1(y))) == true
+    @test Pigeons.recursive_equal(model_1(y), model_2(y)) == false
+    @test Pigeons.recursive_equal(TuringLogPotential(model_1(y)), TuringLogPotential(model_2(y))) == false
 
 end
 
@@ -98,7 +129,7 @@ end
 
 
 @testset "explorer" begin
-    rng = SplittableRandom(2026)
+    rng = SplittableRandom(1)
     @model function cont_model(y)
         x ~ Normal(0, 1)
         y .~ Normal(x, 1)

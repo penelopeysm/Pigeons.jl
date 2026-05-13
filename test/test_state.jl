@@ -106,6 +106,8 @@ end
 
     @test Pigeons.recursive_equal(vi_1, vi_2) == false
     @test Pigeons.recursive_equal(vi_1, vi_1_copy) == true
+    @test Pigeons._recursive_equal(vi_1, vi_2) == false
+    @test Pigeons._recursive_equal(vi_1, vi_1_copy) == true
     @test Pigeons.recursive_equal(model_1(y), model_2(y)) == false
     @test Pigeons.recursive_equal(model_1(y), model_1(y)) == true
     @test Pigeons.recursive_equal(TuringLogPotential(model_1(y)),TuringLogPotential(model_1(y))) == true

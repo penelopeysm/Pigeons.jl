@@ -50,7 +50,7 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false  # or true if you want CI to fail when Codecov fails
-          file: lcov.info
+          files: lcov.info
 
 
   # test OpenMPI by requesting it with MPIPreferences
@@ -85,6 +85,8 @@ jobs:
       shell: julia --color=yes --project=test {0}
       run: |
         using Pkg
+        # Force the resolver to use the dev'd Pigeons to ensure deps are updated correctly
+        Pkg.develop(PackageSpec(path="."))
         Pkg.instantiate()
         using MPIPreferences
         MPIPreferences.use_jll_binary("OpenMPI_jll")
@@ -143,6 +145,8 @@ jobs:
         shell: julia --color=yes --project=test {0}
         run: |
           using Pkg
+          # Force the resolver to use the dev'd Pigeons to ensure deps are updated correctly
+          Pkg.develop(PackageSpec(path="."))
           Pkg.instantiate()
           using MPIPreferences
           mpi_prefix = readchomp(`brew --prefix ${{ matrix.mpi }}`)

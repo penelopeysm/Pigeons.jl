@@ -32,7 +32,6 @@ using OrderedCollections
 using Printf
 using Random
 using RecipesBase
-using Roots
 using Serialization
 using SpecialFunctions: beta
 using StaticArraysCore

@@ -44,5 +44,5 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 VLBIImagePriors = "b1ba175b-8447-452c-b961-7db2d6f7a029"
 ZipFile = "a5390f91-8eb1-5f08-bee0-b1d1ffed6cea"
 
-[compat]
-HypercubeTransform = "=0.4.15"
+[sources]
+Comrade = {rev = "main", url = "https://github.com/ptiede/Comrade.jl.git"}
